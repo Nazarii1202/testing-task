@@ -35,6 +35,7 @@ export function setupSwagger(app: INestApplication): void {
     .addServer(`http://localhost:${port}`, 'Local development')
     .addTag('App', 'General application endpoints')
     .addTag('Auth', 'Authentication and authorization endpoints')
+    .addTag('Data Rooms', 'Virtual data room folder and file management')
     .addTag('Health', 'Service and dependency health checks')
     .build();
 

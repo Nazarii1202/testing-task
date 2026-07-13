@@ -29,18 +29,37 @@ export class ApiRequestError extends Error {
   }
 }
 
-const API_BASE_URL = '/api/v1'
+const API_BASE_URL = 'http://ec2-54-173-134-49.compute-1.amazonaws.com:3000/api/v1'
 
 type RequestOptions = {
   method?: string
   body?: unknown
   token?: string | null
+  formData?: FormData
+}
+
+async function parseError(response: Response): Promise<ApiRequestError> {
+  let errorBody: ApiError | null = null
+
+  try {
+    errorBody = (await response.json()) as ApiError
+  } catch {
+    errorBody = null
+  }
+
+  return new ApiRequestError(
+    errorBody?.statusCode ?? response.status,
+    errorBody?.message ?? 'Request failed',
+    errorBody?.error ?? response.statusText,
+  )
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const headers = new Headers({
-    'Content-Type': 'application/json',
-  })
+  const headers = new Headers()
+
+  if (!options.formData) {
+    headers.set('Content-Type', 'application/json')
+  }
 
   if (options.token) {
     headers.set('Authorization', `Bearer ${options.token}`)
@@ -49,23 +68,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method ?? 'GET',
     headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: options.formData ?? (options.body ? JSON.stringify(options.body) : undefined),
   })
 
   if (!response.ok) {
-    let errorBody: ApiError | null = null
-
-    try {
-      errorBody = (await response.json()) as ApiError
-    } catch {
-      errorBody = null
-    }
-
-    throw new ApiRequestError(
-      errorBody?.statusCode ?? response.status,
-      errorBody?.message ?? 'Request failed',
-      errorBody?.error ?? response.statusText,
-    )
+    throw await parseError(response)
   }
 
   if (response.status === 204) {
@@ -73,6 +80,35 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   return (await response.json()) as T
+}
+
+async function requestBlob(
+  path: string,
+  token: string,
+): Promise<{ blob: Blob; fileName: string | null }> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw await parseError(response)
+  }
+
+  const disposition = response.headers.get('Content-Disposition')
+  const fileName = disposition
+    ? decodeURIComponent(
+        disposition.match(/filename="([^"]+)"/)?.[1] ??
+          disposition.match(/filename\*=UTF-8''([^;]+)/)?.[1] ??
+          '',
+      ) || null
+    : null
+
+  return {
+    blob: await response.blob(),
+    fileName,
+  }
 }
 
 export const authApi = {
@@ -94,3 +130,5 @@ export const authApi = {
     return request<User>('/auth/me', { token })
   },
 }
+
+export { request, requestBlob }

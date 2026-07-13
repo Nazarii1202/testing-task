@@ -1,7 +1,7 @@
 {
   "name": "@testing-task/workspace",
   "version": "0.0.1",
-  "description": "",
+  "description": "Acme Data Room MVP monorepo",
   "homepage": "https://github.com/Nazarii1202/testing-tesk#readme",
   "bugs": {
     "url": "https://github.com/Nazarii1202/testing-tesk/issues"
@@ -15,5 +15,12 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @testing-task/web",
+    "dev:backend": "npm run start:dev --workspace @testing-task/backend",
+    "build:web": "npm run build --workspace @testing-task/web",
+    "build:backend": "npm run build --workspace @testing-task/backend",
+    "build": "npm run build:backend && npm run build:web"
+  }
 }

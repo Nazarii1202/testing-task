@@ -1,8 +1,10 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { GuestRoute } from './components/GuestRoute'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
-import { Home } from './pages/Home'
+import { DataRoomBrowserPage } from './pages/DataRoomBrowserPage'
+import { DataRoomListPage } from './pages/DataRoomListPage'
+import { FileViewerPage } from './pages/FileViewerPage'
 import { SignIn } from './pages/SignIn'
 import { SignUp } from './pages/SignUp'
 
@@ -15,7 +17,31 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <Home />
+                <DataRoomListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/data-rooms/:dataRoomId"
+            element={
+              <ProtectedRoute>
+                <DataRoomBrowserPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/data-rooms/:dataRoomId/folders/:folderId"
+            element={
+              <ProtectedRoute>
+                <FolderRoute />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/data-rooms/:dataRoomId/files/:fileId"
+            element={
+              <ProtectedRoute>
+                <FileViewerPage />
               </ProtectedRoute>
             }
           />
@@ -40,6 +66,11 @@ function App() {
       </BrowserRouter>
     </AuthProvider>
   )
+}
+
+function FolderRoute() {
+  const { folderId } = useParams()
+  return <DataRoomBrowserPage folderId={folderId} />
 }
 
 export default App

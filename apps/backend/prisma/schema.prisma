@@ -14,13 +14,60 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  username     String   @unique
-  email        String   @unique
+  id           String     @id @default(cuid())
+  username     String     @unique
+  email        String     @unique
   passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  dataRooms    DataRoom[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@index([email])
   @@index([username])
+}
+
+model DataRoom {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  folders   Folder[]
+  files     File[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model Folder {
+  id             String   @id @default(cuid())
+  name           String
+  dataRoomId     String
+  dataRoom       DataRoom @relation(fields: [dataRoomId], references: [id], onDelete: Cascade)
+  parentFolderId String?
+  parentFolder   Folder?  @relation("FolderHierarchy", fields: [parentFolderId], references: [id], onDelete: Cascade)
+  childFolders   Folder[] @relation("FolderHierarchy")
+  files          File[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([dataRoomId])
+  @@index([parentFolderId])
+}
+
+model File {
+  id         String   @id @default(cuid())
+  name       String
+  mimeType   String   @default("application/pdf")
+  size       Int
+  content    Bytes
+  dataRoomId String
+  dataRoom   DataRoom @relation(fields: [dataRoomId], references: [id], onDelete: Cascade)
+  folderId   String?
+  folder     Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([dataRoomId])
+  @@index([folderId])
 }
